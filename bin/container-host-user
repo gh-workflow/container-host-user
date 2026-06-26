@@ -42,6 +42,15 @@ have_command() {
   command -v "$1" >/dev/null 2>&1
 }
 
+# Enforce the supported backend contract before mutating system state.
+require_supported_backend() {
+  if have_command gosu || have_command su-exec; then
+    return 0
+  fi
+
+  fail "no supported privilege-drop backend found; install gosu or su-exec"
+}
+
 # Find an existing passwd entry by uid and return "name:home".
 find_passwd_by_uid() {
   awk -F: -v uid="$1" '$3 == uid { print $1 ":" $6; exit }' /etc/passwd
@@ -252,16 +261,15 @@ copy_skel_if_needed() {
 
 # Drop privileges with one of the explicitly supported exec-style backends.
 drop_privileges() {
-  uid="$1"
-  gid="$2"
-  shift 2
+  user_name="$1"
+  shift 1
 
   if have_command gosu; then
-    exec gosu "$uid:$gid" "$@"
+    exec gosu "$user_name" "$@"
   fi
 
   if have_command su-exec; then
-    exec su-exec "$uid:$gid" "$@"
+    exec su-exec "$user_name" "$@"
   fi
 
   fail "no supported privilege-drop backend found; install gosu or su-exec"
@@ -290,6 +298,10 @@ case "${CHU_UID}:${CHU_GID}" in
     fail "CHU_UID and CHU_GID must be numeric"
     ;;
 esac
+
+# Refuse to continue before changing users, groups, or home directories if the
+# required privilege-drop backend is missing.
+require_supported_backend
 
 # Derive a default home directory when the caller did not provide one.
 if [ -z "${CHU_HOME}" ]; then
@@ -349,4 +361,4 @@ export HOME="${runtime_home}"
 export USER="${runtime_user}"
 export CHU_USER_SWITCHED=1
 
-drop_privileges "${CHU_UID}" "${CHU_GID}" "$@"
+drop_privileges "${runtime_user}" "$@"
