@@ -7,6 +7,7 @@ COPY bin/container-host-user /usr/local/bin/container-host-user
 COPY examples/megalinter-entrypoint-hook.sh /hook-entrypoint.sh
 COPY tests/images/fixture-entrypoint.sh /entrypoint.sh
 
+# hadolint ignore=DL3008,DL3041 # This is for tests only
 RUN chmod +x /usr/local/bin/container-host-user /hook-entrypoint.sh /entrypoint.sh \
   && if [ -f /etc/alpine-release ]; then \
        apk add --no-cache shadow su-exec; \
