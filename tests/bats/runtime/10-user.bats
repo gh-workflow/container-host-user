@@ -2,7 +2,7 @@
 
 # Runtime-user provisioning behavior across supported base images.
 
-load helpers/common.sh
+load ../helpers/common.sh
 
 @test "no-op without CHU_UID and CHU_GID" {
   local image

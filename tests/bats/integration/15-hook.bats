@@ -2,7 +2,7 @@
 
 # Hook-and-callback integration behavior across supported base images.
 
-load helpers/common.sh
+load ../helpers/common.sh
 
 @test "existing entrypoint hook switches user and returns to the original entrypoint" {
   local image

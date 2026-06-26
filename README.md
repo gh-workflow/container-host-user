@@ -36,7 +36,8 @@ available tooling at runtime.
 - `bin/container-host-user`: reusable runtime-user provisioning script
 - `examples/example-entrypoint-hook.sh`: entrypoint hook pattern
 - `tests/run.sh`: wrapper to run the full test suite
-- `tests/bats/`: Docker-based cross-distro integration tests and suite helpers
+- `docs/TESTS.md`: skimmable test coverage map
+- `tests/bats/`: Docker-based cross-distro tests grouped by concern
 
 ## Usage
 
@@ -129,3 +130,5 @@ Run:
 The `bats` suite includes shell syntax checks, a direct no-op execution check,
 and Docker-based Alpine, Debian, Fedora, and Ubuntu integration coverage
 against real container entrypoints.
+
+See [docs/TESTS.md](docs/TESTS.md) for the coverage map by use-case group.

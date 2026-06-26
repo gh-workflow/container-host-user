@@ -2,7 +2,7 @@
 
 # Skeleton-home copy behavior across supported base images.
 
-load helpers/common.sh
+load ../helpers/common.sh
 
 @test "copies missing files from /etc/skel when enabled" {
   local image
