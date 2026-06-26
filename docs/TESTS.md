@@ -1,92 +1,100 @@
 # Test Coverage
 
-Test coverage for `container-host-user`.
+## Coverage Board
 
-## Coverage Map
+| Area | Covered | Notes | Evidence |
+| --- | --- | --- | --- |
+| Shell safety | Yes | Main script and example hook parse as `sh`. | `tests/bats/smoke/00-smoke.bats` |
+| No-op behavior | Yes | Unset runtime mapping and non-root invocation bypass provisioning. | `tests/bats/smoke/00-smoke.bats`, `tests/bats/runtime/10-user.bats` |
+| Root pass-through | Yes | Explicit `0:0` mapping stays root. | `tests/bats/runtime/10-user.bats` |
+| Runtime user creation | Yes | Creates user, group, and home for requested uid/gid. | `tests/bats/runtime/10-user.bats` |
+| Existing uid reuse | Yes | Reuses an existing uid instead of replacing it. | `tests/bats/runtime/10-user.bats` |
+| Conflicting preferred name | Yes | Recreates conflicting preferred user/group names. | `tests/bats/runtime/10-user.bats` |
+| Existing home reuse | Yes | Reuses and re-owns an existing home directory. | `tests/bats/runtime/10-user.bats` |
+| Skeleton home files | Yes | Covers `CHU_COPY_SKEL=1` and `CHU_COPY_SKEL=0`. | `tests/bats/runtime/50-skel.bats` |
+| Bind mount ownership | Yes | Writes bind-mounted files with requested ownership. | `tests/bats/integration/20-mounts.bats` |
+| Supplemental groups | Yes | Adds extra gids, reuses existing gid groups, accepts duplicate and mixed-separator input. | `tests/bats/integration/30-groups.bats` |
+| Invalid numeric input | Yes | Rejects invalid `CHU_UID` and invalid `CHU_EXTRA_GIDS`. | `tests/bats/contract/40-validation.bats` |
+| Supported backend contract | Yes | Fails clearly when neither `gosu` nor `su-exec` is installed. | `tests/bats/contract/45-backend.bats` |
+| Hook integration | Yes | Covers the small-hook plus callback-to-entrypoint pattern. | `tests/bats/integration/15-hook.bats` |
+| Distro matrix | Yes | Main behavior suite runs on Alpine, Debian, Fedora, and Ubuntu. | `tests/bats/setup_suite.bash` |
 
-### 1. Baseline Safety
+## Coverage Areas
 
-Coverage:
+### Shell Safety
 
-- the main script parses as plain `sh`
-- the example hook parses as plain `sh`
-- the script safely no-ops when used outside its intended root-switch context
+The suite checks that:
 
-Files:
+- `bin/container-host-user` parses as `sh`
+- the example hook parses as `sh`
 
-- `tests/bats/smoke/00-smoke.bats`
+### Runtime Identity
 
-### 2. Runtime User Provisioning
+The suite checks that:
 
-Coverage:
-
-- unset `CHU_UID`/`CHU_GID` no-op correctly
-- explicit root mapping stays root
-- a runtime user/home is created correctly
-- an existing UID is reused instead of being replaced
-- a conflicting preferred user/group name is recreated
-- an existing home directory is reused and re-owned
+- the script no-ops when runtime mapping is not requested
+- root mapping remains root
+- a runtime user/group/home is created for a new uid/gid
+- an existing uid is reused
+- conflicting preferred user/group names are recreated
+- an existing home directory is re-owned and reused
 - non-root invocation bypasses provisioning
-- `/etc/skel` copying works when enabled and stays off when disabled
 
-Files:
+### Home Content
 
-- `tests/bats/runtime/10-user.bats`
-- `tests/bats/runtime/50-skel.bats`
+The suite checks that:
 
-### 3. Integration Patterns
+- skeleton files are copied when enabled
+- skeleton files are not copied when disabled
+- existing home content is preserved
 
-Coverage:
+### Mounted Workspace Behavior
 
-- the preferred hook-and-callback entrypoint pattern works
-- bind-mounted writes land with the requested ownership
-- supplemental groups are applied for mounted-resource access
-- existing supplemental gid groups are reused
-- duplicate and mixed-separator extra gid input stays usable
+The suite checks that:
 
-Files:
+- bind-mounted files are written with the requested ownership
 
-- `tests/bats/integration/15-hook.bats`
-- `tests/bats/integration/20-mounts.bats`
-- `tests/bats/integration/30-groups.bats`
+### Supplemental Group Access
 
-### 4. Contract and Failure Paths
+The suite checks that:
 
-Coverage:
+- requested extra gids are added
+- existing groups for those gids are reused
+- duplicate gids and mixed separators do not break the final group set
 
-- invalid numeric inputs fail clearly
+### Contract and Failure Paths
+
+The suite checks that:
+
+- invalid numeric runtime input fails clearly
 - unsupported privilege-drop setup fails clearly
 - the supported backend contract is enforced: `gosu` or `su-exec`
 
-Files:
+### Integration Model
 
-- `tests/bats/contract/40-validation.bats`
-- `tests/bats/contract/45-backend.bats`
+The suite checks that:
 
-## Distro Matrix
+- the preferred integration pattern works: a small hook at the top of an
+  existing entrypoint that calls back into the original entrypoint after the
+  user switch
 
-The main suite is intended to run each relevant behavior on:
+## Test Layout
 
-- Alpine
-- Debian
-- Fedora
-- Ubuntu
-
-There are also dedicated fixture images for:
-
-- hook-and-callback entrypoint integration
-- missing-backend failure behavior
-
-## Test Structure
-
-Top-level user entrypoint:
+User-facing runner:
 
 - `tests/run.sh`
 
-Suite bootstrap and shared helpers:
+Suite bootstrap and helpers:
 
 - `tests/bats/setup_suite.bash`
 - `tests/bats/helpers/common.bash`
+
+Grouped test files:
+
+- `tests/bats/smoke/`
+- `tests/bats/runtime/`
+- `tests/bats/integration/`
+- `tests/bats/contract/`
 
 Image fixtures:
 
@@ -94,12 +102,3 @@ Image fixtures:
 - `tests/images/hook-callback.Dockerfile`
 - `tests/images/no-backend.Dockerfile`
 - `tests/images/fixture-entrypoint.sh`
-
-## Reading Order
-
-If you want the fastest overview:
-
-1. `docs/TESTS.md`
-2. `tests/bats/runtime/10-user.bats`
-3. `tests/bats/integration/15-hook.bats`
-4. `tests/bats/contract/45-backend.bats`
