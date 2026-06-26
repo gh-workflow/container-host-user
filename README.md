@@ -28,6 +28,10 @@ Primary targets:
 - Fedora
 - Ubuntu
 
+Additional matrix coverage:
+
+- Arch Linux
+
 The script avoids distro-specific assumptions where possible and chooses the
 available tooling at runtime.
 
@@ -128,7 +132,7 @@ Run:
 ```
 
 The `bats` suite includes shell syntax checks, a direct no-op execution check,
-and Docker-based Alpine, Debian, Fedora, and Ubuntu integration coverage
-against real container entrypoints.
+and Docker-based Alpine, Arch Linux, Debian, Fedora, and Ubuntu integration
+coverage against real container entrypoints.
 
 See [docs/TESTS.md](docs/TESTS.md) for the coverage map by use-case group.

@@ -17,7 +17,7 @@
 | Invalid numeric input | Yes | Rejects invalid `CHU_UID` and invalid `CHU_EXTRA_GIDS`. | `tests/bats/contract/40-validation.bats` |
 | Supported backend contract | Yes | Fails clearly when neither `gosu` nor `su-exec` is installed. | `tests/bats/contract/45-backend.bats` |
 | Hook integration | Yes | Covers the small-hook plus callback-to-entrypoint pattern. | `tests/bats/integration/15-hook.bats` |
-| Distro matrix | Yes | Main behavior suite runs on Alpine, Debian, Fedora, and Ubuntu. | `tests/bats/setup_suite.sh` |
+| Distro matrix | Yes | Main behavior suite runs on Alpine, Arch Linux, Debian, Fedora, and Ubuntu. | `tests/bats/setup_suite.sh` |
 
 ## Coverage Areas
 
@@ -102,3 +102,11 @@ Image fixtures:
 - `tests/images/hook-callback.Dockerfile`
 - `tests/images/no-backend.Dockerfile`
 - `tests/images/fixture-entrypoint.sh`
+
+## Distro Matrix
+
+- Alpine
+- Arch Linux
+- Debian
+- Fedora
+- Ubuntu
