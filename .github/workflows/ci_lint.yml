@@ -1,0 +1,40 @@
+name: "CI: lint"
+
+"on":
+  workflow_call:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: >-
+    ${{ github.workflow }}-${{ github.ref }}${{
+      github.event_name == 'workflow_dispatch' && '-manual-' || ''
+    }}${{
+      github.event_name == 'workflow_dispatch' && github.run_id || ''
+    }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Run linters
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          token: ${{ secrets.PAT || github.token }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: MegaLinter
+        id: ml
+        continue-on-error: true
+        uses: Wuodan/megalinter@beta
+        env:
+          VALIDATE_ALL_CODEBASE: true
+          GITHUB_TOKEN: ${{ github.token }}
