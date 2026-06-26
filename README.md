@@ -41,10 +41,11 @@ available tooling at runtime.
 ## Usage
 
 Copy the script into your image and call it from an entrypoint that still starts
-as `root`.
+as `root`. Your image must also provide either `gosu` or `su-exec`.
 
 ```dockerfile
 COPY bin/container-host-user /usr/local/bin/container-host-user
+RUN apt-get update && apt-get install -y --no-install-recommends gosu
 ```
 
 Minimal wrapper:
@@ -93,8 +94,8 @@ docker run --rm \
 - The script creates the target home directory and attempts to own it.
 - The script can add the runtime user to supplemental groups via
   `CHU_EXTRA_GIDS`.
-- The script uses the first available privilege-drop backend from:
-  `su-exec`, `gosu`, `setpriv`, `runuser`, `su`.
+- The script requires one supported privilege-drop backend:
+  `gosu` or `su-exec`.
 
 ## Example integration
 

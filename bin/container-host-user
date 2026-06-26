@@ -33,11 +33,6 @@ have_command() {
   command -v "$1" >/dev/null 2>&1
 }
 
-# Detect util-linux setpriv, not the reduced BusyBox variant.
-have_setpriv_reuid() {
-  have_command setpriv && setpriv --help 2>&1 | grep -q -- '--reuid'
-}
-
 # Find an existing passwd entry by uid and return "name:home".
 find_passwd_by_uid() {
   awk -F: -v uid="$1" '$3 == uid { print $1 ":" $6; exit }' /etc/passwd
@@ -246,35 +241,21 @@ copy_skel_if_needed() {
   done
 }
 
-# Drop privileges with the best available backend while preserving groups when
-# the backend supports it.
+# Drop privileges with one of the explicitly supported exec-style backends.
 drop_privileges() {
   uid="$1"
   gid="$2"
-  user_name="$3"
-  shift 3
+  shift 2
 
   if have_command gosu; then
     exec gosu "$uid:$gid" "$@"
-  fi
-
-  if have_setpriv_reuid; then
-    exec setpriv --reuid "$uid" --regid "$gid" --init-groups "$@"
-  fi
-
-  if have_command runuser; then
-    exec runuser -u "$user_name" -- "$@"
-  fi
-
-  if have_command su; then
-    exec su -s /bin/sh "$user_name" -c 'exec "$@"' sh "$@"
   fi
 
   if have_command su-exec; then
     exec su-exec "$uid:$gid" "$@"
   fi
 
-  fail "no supported privilege-drop backend found"
+  fail "no supported privilege-drop backend found; install gosu or su-exec"
 }
 
 # The script always needs a target command to exec.
@@ -354,4 +335,4 @@ export HOME="${runtime_home}"
 export USER="${runtime_user}"
 export CHU_USER_SWITCHED=1
 
-drop_privileges "${CHU_UID}" "${CHU_GID}" "${runtime_user}" "$@"
+drop_privileges "${CHU_UID}" "${CHU_GID}" "$@"
