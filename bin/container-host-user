@@ -1,6 +1,20 @@
 #!/bin/sh
 set -eu
 
+# container-host-user
+#
+# Run a command as the requested runtime UID/GID so bind mounts receive
+# host-owned files instead of root-owned files.
+#
+# Inputs:
+# - CHU_UID / CHU_GID: target numeric uid/gid. If either is unset, the script
+#   becomes a no-op and execs the command directly.
+# - CHU_USER: preferred user name when a new account must be created.
+# - CHU_HOME: preferred home directory for the runtime user.
+# - CHU_COPY_SKEL: copy missing files from /etc/skel when set to 1.
+# - CHU_EXTRA_GIDS: comma- or space-separated supplemental gids.
+
+# Runtime user configuration from the environment.
 CHU_UID="${CHU_UID:-}"
 CHU_GID="${CHU_GID:-}"
 CHU_USER="${CHU_USER:-hostuser}"
@@ -8,35 +22,43 @@ CHU_HOME="${CHU_HOME:-}"
 CHU_COPY_SKEL="${CHU_COPY_SKEL:-1}"
 CHU_EXTRA_GIDS="${CHU_EXTRA_GIDS:-}"
 
+# Print an error and abort execution.
 fail() {
   printf '%s\n' "container-host-user: $*" >&2
   exit 1
 }
 
+# Test whether a command is available in the current image.
 have_command() {
   command -v "$1" >/dev/null 2>&1
 }
 
+# Detect util-linux setpriv, not the reduced BusyBox variant.
 have_setpriv_reuid() {
   have_command setpriv && setpriv --help 2>&1 | grep -q -- '--reuid'
 }
 
+# Find an existing passwd entry by uid and return "name:home".
 find_passwd_by_uid() {
   awk -F: -v uid="$1" '$3 == uid { print $1 ":" $6; exit }' /etc/passwd
 }
 
+# Find an existing passwd entry by user name and return "uid:home".
 find_passwd_by_user() {
   awk -F: -v user="$1" '$1 == user { print $3 ":" $6; exit }' /etc/passwd
 }
 
+# Find an existing group name by gid.
 find_group_by_gid() {
   awk -F: -v gid="$1" '$3 == gid { print $1; exit }' /etc/group
 }
 
+# Find an existing gid by group name.
 find_gid_by_group() {
   awk -F: -v group="$1" '$1 == group { print $3; exit }' /etc/group
 }
 
+# Remove a conflicting user account when the underlying tooling supports it.
 delete_user_if_present() {
   user_name="$1"
 
@@ -57,6 +79,7 @@ delete_user_if_present() {
   fail "cannot remove conflicting user $user_name"
 }
 
+# Remove a conflicting group when the underlying tooling supports it.
 delete_group_if_present() {
   group_name="$1"
 
@@ -77,6 +100,7 @@ delete_group_if_present() {
   fail "cannot remove conflicting group $group_name"
 }
 
+# Create a group using the first supported distro-specific tool.
 create_group() {
   group_name="$1"
   gid="$2"
@@ -94,6 +118,7 @@ create_group() {
   fail "cannot create group $group_name"
 }
 
+# Create a user using the first supported distro-specific tool.
 create_user() {
   user_name="$1"
   uid="$2"
@@ -127,6 +152,7 @@ create_user() {
   fail "cannot create user $user_name"
 }
 
+# Reuse an existing group for a gid or create a deterministic helper group.
 group_name_for_gid() {
   gid="$1"
 
@@ -146,6 +172,7 @@ group_name_for_gid() {
   printf '%s\n' "${candidate}"
 }
 
+# Append the runtime user to an existing supplemental group.
 add_user_to_group() {
   user_name="$1"
   group_name="$2"
@@ -170,6 +197,7 @@ add_user_to_group() {
   fail "cannot add user $user_name to group $group_name"
 }
 
+# Parse CHU_EXTRA_GIDS and attach the runtime user to each gid.
 setup_extra_groups() {
   user_name="$1"
   group_list="$2"
@@ -190,6 +218,7 @@ setup_extra_groups() {
   done
 }
 
+# Copy missing skeleton files into the runtime home directory.
 copy_skel_if_needed() {
   home_dir="$1"
   uid="$2"
@@ -217,6 +246,8 @@ copy_skel_if_needed() {
   done
 }
 
+# Drop privileges with the best available backend while preserving groups when
+# the backend supports it.
 drop_privileges() {
   uid="$1"
   gid="$2"
@@ -246,24 +277,29 @@ drop_privileges() {
   fail "no supported privilege-drop backend found"
 }
 
+# The script always needs a target command to exec.
 if [ "$#" -eq 0 ]; then
   fail "missing command to exec"
 fi
 
+# Non-root callers cannot provision users, so they fall through directly.
 if [ "$(id -u)" -ne 0 ]; then
   exec "$@"
 fi
 
+# Missing uid/gid means "do nothing".
 if [ -z "${CHU_UID}" ] || [ -z "${CHU_GID}" ]; then
   exec "$@"
 fi
 
+# Reject non-numeric uid/gid input early.
 case "${CHU_UID}:${CHU_GID}" in
   *[!0-9:]* | :*)
     fail "CHU_UID and CHU_GID must be numeric"
     ;;
 esac
 
+# Derive a default home directory when the caller did not provide one.
 if [ -z "${CHU_HOME}" ]; then
   if [ "${CHU_UID}" = "0" ]; then
     CHU_HOME="/root"
@@ -272,12 +308,14 @@ if [ -z "${CHU_HOME}" ]; then
   fi
 fi
 
+# Explicit root mapping is a no-op apart from HOME/USER normalization.
 if [ "${CHU_UID}" = "0" ] && [ "${CHU_GID}" = "0" ]; then
   export HOME="${CHU_HOME}"
   export USER="root"
   exec "$@"
 fi
 
+# Reuse an existing uid when available, otherwise create the requested account.
 existing_user_entry="$(find_passwd_by_uid "${CHU_UID}")"
 if [ -n "${existing_user_entry}" ]; then
   runtime_user="${existing_user_entry%%:*}"
@@ -306,6 +344,7 @@ else
   runtime_home="${CHU_HOME}"
 fi
 
+# Finalize the runtime environment before dropping privileges.
 mkdir -p "${runtime_home}"
 chown "${CHU_UID}:${CHU_GID}" "${runtime_home}" >/dev/null 2>&1 || true
 copy_skel_if_needed "${runtime_home}" "${CHU_UID}" "${CHU_GID}"

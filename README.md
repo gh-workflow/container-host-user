@@ -35,7 +35,7 @@ available tooling at runtime.
 - `bin/container-host-user`: reusable runtime-user provisioning script
 - `examples/example-entrypoint-hook.sh`: entrypoint hook pattern
 - `tests/run.sh`: wrapper to run the full test suite
-- `tests/*.bats`: Docker-based cross-distro integration tests
+- `tests/bats/`: Docker-based cross-distro integration tests and suite helpers
 
 ## Usage
 

@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=alpine:3.22
+ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
 COPY bin/container-host-user /usr/local/bin/container-host-user
