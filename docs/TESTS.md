@@ -17,6 +17,7 @@
 | Invalid numeric input | Yes | Rejects invalid `CHU_UID` and invalid `CHU_EXTRA_GIDS`. | `tests/bats/contract/40-validation.bats`                             |
 | Supported backend contract | Yes | Fails clearly when neither `gosu` nor `su-exec` is installed. | `tests/bats/contract/45-backend.bats`                                |
 | Hook integration | Yes | Covers the small-hook plus callback-to-entrypoint pattern. | `tests/bats/integration/15-hook.bats`                                |
+| Argument pass-through | Yes | Covers exact argv preservation for direct-entrypoint and hook-style integration. | `tests/bats/integration/17-argv.bats`                                |
 | Real application pressure test | Yes | Runs a remapped non-root startup flow on the official `httpd` image. | `tests/bats/integration/16-httpd.bats`                               |
 | Distro matrix | Yes | Main behavior suite runs on Alpine, Arch Linux, Debian, Fedora, and Ubuntu. | `tests/bats/setup_suite.sh`                                        |
 
@@ -78,6 +79,16 @@ The suite checks that:
 - the preferred integration pattern works: a small hook at the top of an
   existing entrypoint that calls back into the original entrypoint after the
   user switch
+
+### Argument Pass-through
+
+The suite checks that:
+
+- direct-entrypoint images preserve the final command argv exactly
+- hook-style integrations preserve the exact args passed to the original
+  entrypoint
+- empty args, leading dashes, spaces, and shell metacharacters survive the
+  user switch unchanged
 
 ### Real Application Pressure Test
 
