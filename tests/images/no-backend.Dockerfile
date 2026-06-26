@@ -5,6 +5,9 @@ COPY bin/container-host-user /usr/local/bin/container-host-user
 
 RUN if [ -f /etc/alpine-release ]; then \
        apk add --no-cache shadow; \
+     elif [ -f /etc/arch-release ]; then \
+       pacman -Sy --noconfirm shadow; \
+       pacman -Scc --noconfirm; \
      elif [ -f /etc/fedora-release ] || [ -f /etc/redhat-release ]; then \
        dnf install -y shadow-utils; \
        dnf clean all; \

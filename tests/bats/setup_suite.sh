@@ -15,6 +15,7 @@ readonly project_tag="container-host-user-test"
 # Image matrix used by the integration suite.
 readonly -a test_images=(
   "${project_tag}:alpine|alpine:3.22"
+  "${project_tag}:arch|archlinux:latest"
   "${project_tag}:debian|debian:bookworm-slim"
   "${project_tag}:fedora|fedora:42"
   "${project_tag}:ubuntu|ubuntu:24.04"

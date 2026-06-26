@@ -8,6 +8,7 @@ readonly repo_root
 # Image tags produced by setup_suite.sh.
 readonly -a TEST_IMAGE_TAGS=(
   "container-host-user-test:alpine"
+  "container-host-user-test:arch"
   "container-host-user-test:debian"
   "container-host-user-test:fedora"
   "container-host-user-test:ubuntu"
@@ -16,6 +17,7 @@ readonly -a TEST_IMAGE_TAGS=(
 # Companion hook/callback fixture images for the same distro matrix.
 readonly -a TEST_HOOK_IMAGE_TAGS=(
   "container-host-user-test:alpine-hook"
+  "container-host-user-test:arch-hook"
   "container-host-user-test:debian-hook"
   "container-host-user-test:fedora-hook"
   "container-host-user-test:ubuntu-hook"
