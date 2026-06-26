@@ -9,7 +9,7 @@ load ../helpers/common.bash
   local host_dir
 
   host_dir="$(mktemp -d)"
-  trap 'cleanup_dir "${host_dir}"' RETURN
+  trap 'cleanup_dir "${host_dir}"' EXIT
   prepare_bind_mount_dir "${host_dir}"
 
   for image in "${TEST_IMAGE_TAGS[@]}"; do
