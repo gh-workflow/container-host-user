@@ -41,8 +41,8 @@ load ../helpers/common.sh
   assert_output_eq "1234:2345" "${lines[4]}" "httpd fixture pid ownership mismatch"
 
   run docker exec "${container_name}" sh -lc '
-    wget -q -O - http://127.0.0.1:8080/ \
-      && printf "\nHOME_OWNER=%s\n" "$(stat -c "%u:%g" /home/webapp)"
+    wget -q -O - http://127.0.0.1:8080/ &&
+      printf "\nHOME_OWNER=%s\n" "$(stat -c "%u:%g" /home/webapp)"
   '
   [ "$status" -eq 0 ]
   [[ "${output}" == *"It works! Apache httpd"* ]]

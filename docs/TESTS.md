@@ -2,24 +2,24 @@
 
 ## Coverage Board
 
-| Area | Covered | Notes | Evidence |
-| --- | --- | --- | -------------------------------------------------------------------- |
-| Shell safety | Yes | Main script and example hook parse as `sh`. | `tests/bats/smoke/00-smoke.bats` |
-| No-op behavior | Yes | Unset runtime mapping and non-root invocation bypass provisioning. | `tests/bats/smoke/00-smoke.bats`,<br/>`tests/bats/runtime/10-user.bats` |
-| Root pass-through | Yes | Explicit `0:0` mapping stays root. | `tests/bats/runtime/10-user.bats`                                    |
-| Runtime user creation | Yes | Creates user, group, and home for requested uid/gid. | `tests/bats/runtime/10-user.bats`                                    |
-| Existing uid reuse | Yes | Reuses an existing uid instead of replacing it. | `tests/bats/runtime/10-user.bats`                                    |
-| Conflicting preferred name | Yes | Recreates conflicting preferred user/group names. | `tests/bats/runtime/10-user.bats`                                    |
-| Existing home reuse | Yes | Reuses and re-owns an existing home directory. | `tests/bats/runtime/10-user.bats`                                    |
-| Skeleton home files | Yes | Covers `CHU_COPY_SKEL=1` and `CHU_COPY_SKEL=0`. | `tests/bats/runtime/50-skel.bats`                                    |
-| Bind mount ownership | Yes | Writes bind-mounted files with requested ownership. | `tests/bats/integration/20-mounts.bats`                              |
-| Supplemental groups | Yes | Adds extra gids, reuses existing gid groups, accepts duplicate and mixed-separator input. | `tests/bats/integration/30-groups.bats`                              |
-| Invalid numeric input | Yes | Rejects invalid `CHU_UID` and invalid `CHU_EXTRA_GIDS`. | `tests/bats/contract/40-validation.bats`                             |
-| Supported backend contract | Yes | Fails clearly when neither `gosu` nor `su-exec` is installed. | `tests/bats/contract/45-backend.bats`                                |
-| Hook integration | Yes | Covers the small-hook plus callback-to-entrypoint pattern. | `tests/bats/integration/15-hook.bats`                                |
-| Argument pass-through | Yes | Covers exact argv preservation for direct-entrypoint and hook-style integration. | `tests/bats/integration/17-argv.bats`                                |
-| Real application pressure test | Yes | Runs a remapped non-root startup flow on the official `httpd` image. | `tests/bats/integration/16-httpd.bats`                               |
-| Distro matrix | Yes | Main behavior suite runs on Alpine, Arch Linux, Debian, Fedora, and Ubuntu. | `tests/bats/setup_suite.sh`                                        |
+| Area                           | Covered | Notes                                                                                     | Evidence                                                                |
+|--------------------------------|---------|-------------------------------------------------------------------------------------------|-------------------------------------------------------------------------|
+| Shell safety                   | Yes     | Main script and example hook parse as `sh`.                                               | `tests/bats/smoke/00-smoke.bats`                                        |
+| No-op behavior                 | Yes     | Unset runtime mapping and non-root invocation bypass provisioning.                        | `tests/bats/smoke/00-smoke.bats`,<br/>`tests/bats/runtime/10-user.bats` |
+| Root pass-through              | Yes     | Explicit `0:0` mapping stays root.                                                        | `tests/bats/runtime/10-user.bats`                                       |
+| Runtime user creation          | Yes     | Creates user, group, and home for requested uid/gid.                                      | `tests/bats/runtime/10-user.bats`                                       |
+| Existing uid reuse             | Yes     | Reuses an existing uid instead of replacing it.                                           | `tests/bats/runtime/10-user.bats`                                       |
+| Conflicting preferred name     | Yes     | Recreates conflicting preferred user/group names.                                         | `tests/bats/runtime/10-user.bats`                                       |
+| Existing home reuse            | Yes     | Reuses and re-owns an existing home directory.                                            | `tests/bats/runtime/10-user.bats`                                       |
+| Skeleton home files            | Yes     | Covers `CHU_COPY_SKEL=1` and `CHU_COPY_SKEL=0`.                                           | `tests/bats/runtime/50-skel.bats`                                       |
+| Bind mount ownership           | Yes     | Writes bind-mounted files with requested ownership.                                       | `tests/bats/integration/20-mounts.bats`                                 |
+| Supplemental groups            | Yes     | Adds extra gids, reuses existing gid groups, accepts duplicate and mixed-separator input. | `tests/bats/integration/30-groups.bats`                                 |
+| Invalid numeric input          | Yes     | Rejects invalid `CHU_UID` and invalid `CHU_EXTRA_GIDS`.                                   | `tests/bats/contract/40-validation.bats`                                |
+| Supported backend contract     | Yes     | Fails clearly when neither `gosu` nor `su-exec` is installed.                             | `tests/bats/contract/45-backend.bats`                                   |
+| Hook integration               | Yes     | Covers the small-hook plus callback-to-entrypoint pattern.                                | `tests/bats/integration/15-hook.bats`                                   |
+| Argument pass-through          | Yes     | Covers exact argv preservation for direct-entrypoint and hook-style integration.          | `tests/bats/integration/17-argv.bats`                                   |
+| Real application pressure test | Yes     | Runs a remapped non-root startup flow on the official `httpd` image.                      | `tests/bats/integration/16-httpd.bats`                                  |
+| Distro matrix                  | Yes     | Main behavior suite runs on Alpine, Arch Linux, Debian, Fedora, and Ubuntu.               | `tests/bats/setup_suite.sh`                                             |
 
 ## Coverage Areas
 

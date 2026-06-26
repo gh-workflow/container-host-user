@@ -48,4 +48,6 @@ jobs:
           # new non-root user feature
           MEGALINTER_UID: ${{ env.MEGALINTER_UID }}
           MEGALINTER_GID: ${{ env.MEGALINTER_GID }}
-          MEGALINTER_USER:  ${{ env.MEGALINTER_USER }}
+          MEGALINTER_USER: ${{ env.MEGALINTER_USER }}
+          # shfmt shall prefer 2 spaces to indent not tabs
+          BASH_SHFMT_ARGUMENTS: -indent 2 -case-indent
