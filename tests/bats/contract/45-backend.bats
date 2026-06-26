@@ -2,7 +2,7 @@
 
 # Approved privilege-drop backend requirements.
 
-load ../helpers/common.bash
+load ../helpers/common.sh
 
 @test "fails clearly when neither gosu nor su-exec is installed" {
   run docker run --rm \

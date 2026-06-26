@@ -2,7 +2,7 @@
 
 # Real-application pressure test using the official httpd image.
 
-load ../helpers/common.bash
+load ../helpers/common.sh
 
 @test "httpd hook fixture starts as remapped non-root user" {
   local container_name

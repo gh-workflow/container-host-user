@@ -2,7 +2,7 @@
 
 # Argument pass-through behavior for direct-entrypoint and hook-style images.
 
-load ../helpers/common.bash
+load ../helpers/common.sh
 
 assert_argv_contract() {
   local output_blob="$1"

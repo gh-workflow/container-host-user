@@ -19,7 +19,7 @@
 | Hook integration | Yes | Covers the small-hook plus callback-to-entrypoint pattern. | `tests/bats/integration/15-hook.bats`                                |
 | Argument pass-through | Yes | Covers exact argv preservation for direct-entrypoint and hook-style integration. | `tests/bats/integration/17-argv.bats`                                |
 | Real application pressure test | Yes | Runs a remapped non-root startup flow on the official `httpd` image. | `tests/bats/integration/16-httpd.bats`                               |
-| Distro matrix | Yes | Main behavior suite runs on Alpine, Arch Linux, Debian, Fedora, and Ubuntu. | `tests/bats/setup_suite.bash`                                        |
+| Distro matrix | Yes | Main behavior suite runs on Alpine, Arch Linux, Debian, Fedora, and Ubuntu. | `tests/bats/setup_suite.sh`                                        |
 
 ## Coverage Areas
 
@@ -106,8 +106,8 @@ User-facing runner:
 
 Suite bootstrap and helpers:
 
-- `tests/bats/setup_suite.bash`
-- `tests/bats/helpers/common.bash`
+- `tests/bats/setup_suite.sh`
+- `tests/bats/helpers/common.sh`
 
 Grouped test files:
 

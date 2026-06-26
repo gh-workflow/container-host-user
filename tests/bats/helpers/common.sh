@@ -5,7 +5,7 @@
 repo_root=$(CDPATH= cd -- "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
 readonly repo_root
 
-# Image tags produced by setup_suite.bash.
+# Image tags produced by setup_suite.sh.
 readonly -a TEST_IMAGE_TAGS=(
   "container-host-user-test:alpine"
   "container-host-user-test:arch"

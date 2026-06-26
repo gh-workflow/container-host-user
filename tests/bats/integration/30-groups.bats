@@ -2,7 +2,7 @@
 
 # Supplemental-group behavior across supported base images.
 
-load ../helpers/common.bash
+load ../helpers/common.sh
 
 @test "adds the runtime user to supplemental gids" {
   local image
