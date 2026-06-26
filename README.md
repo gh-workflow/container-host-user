@@ -35,6 +35,7 @@ available tooling at runtime.
 - `bin/container-host-user`: reusable runtime-user provisioning script
 - `examples/example-entrypoint-hook.sh`: entrypoint hook pattern
 - `tests/smoke.sh`: basic smoke tests
+- `tests/integration.sh`: Docker-based cross-distro integration tests
 
 ## Usage
 
@@ -75,6 +76,9 @@ docker run --rm \
   for UID `0`
 - `CHU_COPY_SKEL`: copy missing files from `/etc/skel` into the home directory.
   Default: `1`
+- `CHU_EXTRA_GIDS`: comma- or space-separated supplemental GIDs to create or
+  reuse and add to the runtime user. Useful for mounted resources such as
+  Docker sockets.
 
 ## Behavior
 
@@ -86,6 +90,8 @@ docker run --rm \
 - If the preferred user or group name already exists with conflicting IDs, the
   script removes and recreates that account.
 - The script creates the target home directory and attempts to own it.
+- The script can add the runtime user to supplemental groups via
+  `CHU_EXTRA_GIDS`.
 - The script uses the first available privilege-drop backend from:
   `su-exec`, `gosu`, `setpriv`, `runuser`, `su`.
 
@@ -115,8 +121,10 @@ for a concrete hook example.
 Run:
 
 ```sh
-tests/smoke.sh
+sh tests/smoke.sh
+./tests/integration.sh
 ```
 
-The current smoke tests validate syntax and no-op behavior. More complete
-cross-distro tests should be added next, ideally through container-based CI.
+The smoke tests validate syntax and basic no-op behavior. The integration tests
+build dedicated Alpine, Debian, and Ubuntu images and validate runtime-user
+behavior against real container entrypoints.
