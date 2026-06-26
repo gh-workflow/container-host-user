@@ -9,6 +9,7 @@ repo_root=$(CDPATH= cd -- "$(dirname "${BATS_TEST_FILENAME}")/../.." && pwd)
 readonly repo_root
 readonly dockerfile="${repo_root}/tests/images/Dockerfile"
 readonly hook_dockerfile="${repo_root}/tests/images/hook-callback.Dockerfile"
+readonly httpd_dockerfile="${repo_root}/tests/images/httpd-pressure.Dockerfile"
 readonly no_backend_dockerfile="${repo_root}/tests/images/no-backend.Dockerfile"
 readonly project_tag="container-host-user-test"
 
@@ -40,6 +41,12 @@ build_test_images() {
       -f "${hook_dockerfile}" \
       "${repo_root}" >/dev/null
   done
+
+  echo "building ${project_tag}:httpd from httpd:2.4-alpine" >&3
+  docker build \
+    -t "${project_tag}:httpd" \
+    -f "${httpd_dockerfile}" \
+    "${repo_root}" >/dev/null
 
   echo "building ${project_tag}:no-backend from alpine:3.22" >&3
   docker build \
