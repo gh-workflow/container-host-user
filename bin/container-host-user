@@ -6,6 +6,7 @@ CHU_GID="${CHU_GID:-}"
 CHU_USER="${CHU_USER:-hostuser}"
 CHU_HOME="${CHU_HOME:-}"
 CHU_COPY_SKEL="${CHU_COPY_SKEL:-1}"
+CHU_EXTRA_GIDS="${CHU_EXTRA_GIDS:-}"
 CHU_DEBUG="${CHU_DEBUG:-0}"
 
 log_debug() {
@@ -21,6 +22,10 @@ fail() {
 
 have_command() {
   command -v "$1" >/dev/null 2>&1
+}
+
+have_setpriv_reuid() {
+  have_command setpriv && setpriv --help 2>&1 | grep -q -- '--reuid'
 }
 
 find_passwd_by_uid() {
@@ -83,13 +88,13 @@ create_group() {
   group_name="$1"
   gid="$2"
 
-  if have_command addgroup; then
-    addgroup -g "$gid" "$group_name" >/dev/null
+  if have_command groupadd; then
+    groupadd -g "$gid" "$group_name" >/dev/null
     return 0
   fi
 
-  if have_command groupadd; then
-    groupadd -g "$gid" "$group_name" >/dev/null
+  if have_command addgroup; then
+    addgroup -g "$gid" "$group_name" >/dev/null
     return 0
   fi
 
@@ -103,6 +108,11 @@ create_user() {
   home_dir="$4"
 
   mkdir -p "$home_dir"
+
+  if have_command useradd; then
+    useradd -M -u "$uid" -g "$group_name" -d "$home_dir" -s /bin/sh "$user_name" >/dev/null
+    return 0
+  fi
 
   if have_command adduser; then
     if adduser --help 2>&1 | grep -q -- 'BusyBox'; then
@@ -121,12 +131,70 @@ create_user() {
     return 0
   fi
 
-  if have_command useradd; then
-    useradd -m -u "$uid" -g "$group_name" -d "$home_dir" -s /bin/sh "$user_name" >/dev/null
+  fail "cannot create user $user_name"
+}
+
+group_name_for_gid() {
+  gid="$1"
+
+  existing_group="$(find_group_by_gid "$gid")"
+  if [ -n "${existing_group}" ]; then
+    printf '%s\n' "${existing_group}"
     return 0
   fi
 
-  fail "cannot create user $user_name"
+  candidate="chu-gid-${gid}"
+  candidate_gid="$(find_gid_by_group "${candidate}")"
+  if [ -n "${candidate_gid}" ] && [ "${candidate_gid}" != "${gid}" ]; then
+    candidate="chu-extra-${gid}"
+  fi
+
+  create_group "${candidate}" "${gid}"
+  printf '%s\n' "${candidate}"
+}
+
+add_user_to_group() {
+  user_name="$1"
+  group_name="$2"
+
+  if have_command usermod; then
+    usermod -aG "$group_name" "$user_name" >/dev/null
+    return 0
+  fi
+
+  if have_command addgroup; then
+    if addgroup --help 2>&1 | grep -q -- 'BusyBox'; then
+      addgroup "$user_name" "$group_name" >/dev/null
+      return 0
+    fi
+  fi
+
+  if have_command adduser; then
+    adduser "$user_name" "$group_name" >/dev/null
+    return 0
+  fi
+
+  fail "cannot add user $user_name to group $group_name"
+}
+
+setup_extra_groups() {
+  user_name="$1"
+  group_list="$2"
+
+  if [ -z "${group_list}" ]; then
+    return 0
+  fi
+
+  for gid in $(printf '%s\n' "${group_list}" | tr ',:' '  '); do
+    case "${gid}" in
+      *[!0-9]* | '')
+        fail "CHU_EXTRA_GIDS must be a comma- or space-separated list of numeric gids"
+        ;;
+    esac
+
+    extra_group="$(group_name_for_gid "${gid}")"
+    add_user_to_group "${user_name}" "${extra_group}"
+  done
 }
 
 copy_skel_if_needed() {
@@ -162,16 +230,12 @@ drop_privileges() {
   user_name="$3"
   shift 3
 
-  if have_command su-exec; then
-    exec su-exec "$uid:$gid" "$@"
-  fi
-
   if have_command gosu; then
     exec gosu "$uid:$gid" "$@"
   fi
 
-  if have_command setpriv; then
-    exec setpriv --reuid "$uid" --regid "$gid" --clear-groups "$@"
+  if have_setpriv_reuid; then
+    exec setpriv --reuid "$uid" --regid "$gid" --init-groups "$@"
   fi
 
   if have_command runuser; then
@@ -180,6 +244,10 @@ drop_privileges() {
 
   if have_command su; then
     exec su -s /bin/sh "$user_name" -c 'exec "$@"' sh "$@"
+  fi
+
+  if have_command su-exec; then
+    exec su-exec "$uid:$gid" "$@"
   fi
 
   fail "no supported privilege-drop backend found"
@@ -253,6 +321,7 @@ fi
 mkdir -p "${runtime_home}"
 chown "${CHU_UID}:${CHU_GID}" "${runtime_home}" >/dev/null 2>&1 || true
 copy_skel_if_needed "${runtime_home}" "${CHU_UID}" "${CHU_GID}"
+setup_extra_groups "${runtime_user}" "${CHU_EXTRA_GIDS}"
 
 export HOME="${runtime_home}"
 export USER="${runtime_user}"
