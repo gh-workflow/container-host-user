@@ -6,3 +6,10 @@ misconfigurations:
       - tests/images/httpd-pressure.Dockerfile
       - tests/images/no-backend.Dockerfile
     statement: Test Dockerfiles intentionally run as root.
+  - id: AVD-DS-0026
+    paths:
+      - tests/images/Dockerfile
+      - tests/images/hook-callback.Dockerfile
+      - tests/images/httpd-pressure.Dockerfile
+      - tests/images/no-backend.Dockerfile
+    statement: Test Dockerfiles are short-lived fixture images and do not need HEALTHCHECK.
