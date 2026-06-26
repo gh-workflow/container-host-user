@@ -1,0 +1,249 @@
+#!/bin/sh
+set -eu
+
+CHU_UID="${CHU_UID:-}"
+CHU_GID="${CHU_GID:-}"
+CHU_USER="${CHU_USER:-hostuser}"
+CHU_HOME="${CHU_HOME:-}"
+CHU_COPY_SKEL="${CHU_COPY_SKEL:-1}"
+
+fail() {
+  printf '%s\n' "container-host-user: $*" >&2
+  exit 1
+}
+
+have_command() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+find_passwd_by_uid() {
+  awk -F: -v uid="$1" '$3 == uid { print $1 ":" $6; exit }' /etc/passwd
+}
+
+find_passwd_by_user() {
+  awk -F: -v user="$1" '$1 == user { print $3 ":" $6; exit }' /etc/passwd
+}
+
+find_group_by_gid() {
+  awk -F: -v gid="$1" '$3 == gid { print $1; exit }' /etc/group
+}
+
+find_gid_by_group() {
+  awk -F: -v group="$1" '$1 == group { print $3; exit }' /etc/group
+}
+
+delete_user_if_present() {
+  user_name="$1"
+
+  if ! awk -F: -v user="$user_name" '$1 == user { found = 1 } END { exit !found }' /etc/passwd; then
+    return 0
+  fi
+
+  if have_command deluser; then
+    deluser "$user_name" >/dev/null 2>&1 || true
+    return 0
+  fi
+
+  if have_command userdel; then
+    userdel "$user_name" >/dev/null 2>&1 || true
+    return 0
+  fi
+
+  fail "cannot remove conflicting user $user_name"
+}
+
+delete_group_if_present() {
+  group_name="$1"
+
+  if ! awk -F: -v group="$group_name" '$1 == group { found = 1 } END { exit !found }' /etc/group; then
+    return 0
+  fi
+
+  if have_command delgroup; then
+    delgroup "$group_name" >/dev/null 2>&1 || true
+    return 0
+  fi
+
+  if have_command groupdel; then
+    groupdel "$group_name" >/dev/null 2>&1 || true
+    return 0
+  fi
+
+  fail "cannot remove conflicting group $group_name"
+}
+
+create_group() {
+  group_name="$1"
+  gid="$2"
+
+  if have_command addgroup; then
+    addgroup -g "$gid" "$group_name" >/dev/null
+    return 0
+  fi
+
+  if have_command groupadd; then
+    groupadd -g "$gid" "$group_name" >/dev/null
+    return 0
+  fi
+
+  fail "cannot create group $group_name"
+}
+
+create_user() {
+  user_name="$1"
+  uid="$2"
+  group_name="$3"
+  home_dir="$4"
+
+  mkdir -p "$home_dir"
+
+  if have_command adduser; then
+    if adduser --help 2>&1 | grep -q -- 'BusyBox'; then
+      adduser -D -H -u "$uid" -G "$group_name" -h "$home_dir" -s /bin/sh "$user_name" >/dev/null
+      return 0
+    fi
+
+    adduser \
+      --disabled-password \
+      --gecos "" \
+      --uid "$uid" \
+      --ingroup "$group_name" \
+      --home "$home_dir" \
+      --shell /bin/sh \
+      "$user_name" >/dev/null
+    return 0
+  fi
+
+  if have_command useradd; then
+    useradd -m -u "$uid" -g "$group_name" -d "$home_dir" -s /bin/sh "$user_name" >/dev/null
+    return 0
+  fi
+
+  fail "cannot create user $user_name"
+}
+
+copy_skel_if_needed() {
+  home_dir="$1"
+  uid="$2"
+  gid="$3"
+
+  if [ "${CHU_COPY_SKEL}" != "1" ]; then
+    return 0
+  fi
+
+  if [ ! -d /etc/skel ]; then
+    return 0
+  fi
+
+  for src in /etc/skel/.[!.]* /etc/skel/..?* /etc/skel/*; do
+    if [ ! -e "$src" ]; then
+      continue
+    fi
+    name=$(basename "$src")
+    dst="${home_dir}/${name}"
+    if [ -e "$dst" ]; then
+      continue
+    fi
+    cp -R "$src" "$dst"
+    chown -R "$uid:$gid" "$dst" >/dev/null 2>&1 || true
+  done
+}
+
+drop_privileges() {
+  uid="$1"
+  gid="$2"
+  user_name="$3"
+  shift 3
+
+  if have_command su-exec; then
+    exec su-exec "$uid:$gid" "$@"
+  fi
+
+  if have_command gosu; then
+    exec gosu "$uid:$gid" "$@"
+  fi
+
+  if have_command setpriv; then
+    exec setpriv --reuid "$uid" --regid "$gid" --clear-groups "$@"
+  fi
+
+  if have_command runuser; then
+    exec runuser -u "$user_name" -- "$@"
+  fi
+
+  if have_command su; then
+    exec su -s /bin/sh "$user_name" -c 'exec "$@"' sh "$@"
+  fi
+
+  fail "no supported privilege-drop backend found"
+}
+
+if [ "$#" -eq 0 ]; then
+  fail "missing command to exec"
+fi
+
+if [ "$(id -u)" -ne 0 ]; then
+  exec "$@"
+fi
+
+if [ -z "${CHU_UID}" ] || [ -z "${CHU_GID}" ]; then
+  exec "$@"
+fi
+
+case "${CHU_UID}:${CHU_GID}" in
+  *[!0-9:]* | :*)
+    fail "CHU_UID and CHU_GID must be numeric"
+    ;;
+esac
+
+if [ -z "${CHU_HOME}" ]; then
+  if [ "${CHU_UID}" = "0" ]; then
+    CHU_HOME="/root"
+  else
+    CHU_HOME="/home/${CHU_USER}"
+  fi
+fi
+
+if [ "${CHU_UID}" = "0" ] && [ "${CHU_GID}" = "0" ]; then
+  export HOME="${CHU_HOME}"
+  export USER="root"
+  exec "$@"
+fi
+
+existing_user_entry="$(find_passwd_by_uid "${CHU_UID}")"
+if [ -n "${existing_user_entry}" ]; then
+  runtime_user="${existing_user_entry%%:*}"
+  runtime_home="${existing_user_entry#*:}"
+else
+  conflicting_user_entry="$(find_passwd_by_user "${CHU_USER}")"
+  if [ -n "${conflicting_user_entry}" ]; then
+    conflicting_uid="${conflicting_user_entry%%:*}"
+    if [ "${conflicting_uid}" != "${CHU_UID}" ]; then
+      delete_user_if_present "${CHU_USER}"
+    fi
+  fi
+
+  runtime_group="$(find_group_by_gid "${CHU_GID}")"
+  if [ -z "${runtime_group}" ]; then
+    conflicting_gid="$(find_gid_by_group "${CHU_USER}")"
+    if [ -n "${conflicting_gid}" ] && [ "${conflicting_gid}" != "${CHU_GID}" ]; then
+      delete_group_if_present "${CHU_USER}"
+    fi
+    create_group "${CHU_USER}" "${CHU_GID}"
+    runtime_group="${CHU_USER}"
+  fi
+
+  create_user "${CHU_USER}" "${CHU_UID}" "${runtime_group}" "${CHU_HOME}"
+  runtime_user="${CHU_USER}"
+  runtime_home="${CHU_HOME}"
+fi
+
+mkdir -p "${runtime_home}"
+chown "${CHU_UID}:${CHU_GID}" "${runtime_home}" >/dev/null 2>&1 || true
+copy_skel_if_needed "${runtime_home}" "${CHU_UID}" "${CHU_GID}"
+
+export HOME="${runtime_home}"
+export USER="${runtime_user}"
+export CHU_USER_SWITCHED=1
+
+drop_privileges "${CHU_UID}" "${CHU_GID}" "${runtime_user}" "$@"
