@@ -6,6 +6,9 @@ COPY bin/container-host-user /usr/local/bin/container-host-user
 RUN chmod +x /usr/local/bin/container-host-user \
   && if [ -f /etc/alpine-release ]; then \
        apk add --no-cache shadow su-exec; \
+     elif [ -f /etc/fedora-release ] || [ -f /etc/redhat-release ]; then \
+       dnf install -y shadow-utils util-linux; \
+       dnf clean all; \
      elif [ -f /etc/debian_version ]; then \
        apt-get update; \
        apt-get install -y --no-install-recommends passwd util-linux; \

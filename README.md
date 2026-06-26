@@ -25,6 +25,7 @@ Primary targets:
 
 - Alpine
 - Debian
+- Fedora
 - Ubuntu
 
 The script avoids distro-specific assumptions where possible and chooses the
@@ -128,5 +129,5 @@ sh tests/run.sh
 ```
 
 The `bats` suite includes shell syntax checks, a direct no-op execution check,
-and Docker-based Alpine, Debian, and Ubuntu integration coverage against real
-container entrypoints.
+and Docker-based Alpine, Debian, Fedora, and Ubuntu integration coverage
+against real container entrypoints.
