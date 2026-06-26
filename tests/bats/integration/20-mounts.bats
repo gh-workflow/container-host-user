@@ -2,7 +2,7 @@
 
 # Bind-mount ownership behavior across supported base images.
 
-load helpers/common.bash
+load ../helpers/common.bash
 
 @test "writes bind-mounted files with the requested ownership" {
   local image

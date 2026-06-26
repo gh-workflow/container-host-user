@@ -2,7 +2,7 @@
 
 # Input validation and failure behavior across supported base images.
 
-load helpers/common.bash
+load ../helpers/common.bash
 
 @test "rejects non-numeric CHU_UID" {
   local image
