@@ -8,6 +8,7 @@ set -euo pipefail
 repo_root=$(CDPATH= cd -- "$(dirname "${BATS_TEST_FILENAME}")/../.." && pwd)
 readonly repo_root
 readonly dockerfile="${repo_root}/tests/images/Dockerfile"
+readonly no_backend_dockerfile="${repo_root}/tests/images/no-backend.Dockerfile"
 readonly project_tag="container-host-user-test"
 
 # Image matrix used by the integration suite.
@@ -30,6 +31,13 @@ build_test_images() {
       -f "${dockerfile}" \
       "${repo_root}" >/dev/null
   done
+
+  echo "building ${project_tag}:no-backend from alpine:3.22" >&3
+  docker build \
+    --build-arg "BASE_IMAGE=alpine:3.22" \
+    -t "${project_tag}:no-backend" \
+    -f "${no_backend_dockerfile}" \
+    "${repo_root}" >/dev/null
 }
 
 # bats entrypoint that runs before any test files in this suite.
