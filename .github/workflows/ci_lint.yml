@@ -1,0 +1,51 @@
+name: "CI: lint"
+
+"on":
+  workflow_call:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: >-
+    ${{ github.workflow }}-${{ github.ref }}${{
+      github.event_name == 'workflow_dispatch' && '-manual-' || ''
+    }}${{
+      github.event_name == 'workflow_dispatch' && github.run_id || ''
+    }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Run linters
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          token: ${{ secrets.PAT || github.token }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Get user information
+        run: |
+          {
+            echo "MEGALINTER_UID=$(id -u)"
+            echo "MEGALINTER_GID=$(id -g)"
+            echo "MEGALINTER_USER=$(id -un)"
+          } >> "$GITHUB_ENV"
+
+      - name: MegaLinter
+        id: ml
+        uses: oxsecurity/megalinter@ef3e84b8b836d76db562d0f3ed7da61e8fd538bc # v9.6.0
+        env:
+          VALIDATE_ALL_CODEBASE: true
+          GITHUB_TOKEN: ${{ github.token }}
+          # new non-root user feature
+          MEGALINTER_UID: ${{ env.MEGALINTER_UID }}
+          MEGALINTER_GID: ${{ env.MEGALINTER_GID }}
+          MEGALINTER_USER:  ${{ env.MEGALINTER_USER }}
