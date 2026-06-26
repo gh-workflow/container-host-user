@@ -35,6 +35,27 @@ load helpers/common.sh
   done
 }
 
+@test "passes through explicit root mapping" {
+  local image
+  local -a lines
+
+  for image in "${TEST_IMAGE_TAGS[@]}"; do
+    run docker run --rm \
+      -e CHU_UID=0 \
+      -e CHU_GID=0 \
+      -e CHU_USER=demo \
+      -e CHU_HOME=/custom-root-home \
+      "${image}" \
+      sh -lc 'printf "%s\n%s\n%s\n%s\n" "$(id -u)" "$(id -g)" "$(id -un)" "$HOME"'
+    [ "$status" -eq 0 ]
+    mapfile -t lines <<<"${output}"
+    assert_output_eq "0" "${lines[0]}" "${image}: root uid mismatch"
+    assert_output_eq "0" "${lines[1]}" "${image}: root gid mismatch"
+    assert_output_eq "root" "${lines[2]}" "${image}: root user mismatch"
+    assert_output_eq "/custom-root-home" "${lines[3]}" "${image}: root home mismatch"
+  done
+}
+
 @test "reuses existing uid instead of replacing it" {
   local image
   local -a lines
@@ -79,6 +100,43 @@ load helpers/common.sh
   done
 }
 
+@test "recreates a conflicting preferred user and group name" {
+  local image
+  local tail_line
+  local user group uid gid home
+
+  for image in "${TEST_IMAGE_TAGS[@]}"; do
+    run docker run --rm --entrypoint sh \
+      -e CHU_UID=5151 \
+      -e CHU_GID=5151 \
+      -e CHU_USER=conflictuser \
+      -e CHU_HOME=/home/conflictuser \
+      "${image}" \
+      -lc "
+        set -eu
+        if command -v groupadd >/dev/null 2>&1; then
+          getent group conflictuser >/dev/null 2>&1 || groupadd -g 4242 conflictuser
+        else
+          getent group conflictuser >/dev/null 2>&1 || addgroup -g 4242 conflictuser >/dev/null
+        fi
+        if command -v useradd >/dev/null 2>&1; then
+          getent passwd conflictuser >/dev/null 2>&1 || useradd -M -u 4242 -g conflictuser -d /home/legacy-conflict -s /bin/sh conflictuser
+        else
+          getent passwd conflictuser >/dev/null 2>&1 || adduser -D -H -u 4242 -G conflictuser -h /home/legacy-conflict -s /bin/sh conflictuser >/dev/null
+        fi
+        /usr/local/bin/container-host-user sh -lc 'printf \"%s:%s:%s:%s:%s\n\" \"\$(id -un)\" \"\$(id -gn)\" \"\$(id -u)\" \"\$(id -g)\" \"\$HOME\"'
+      "
+    [ "$status" -eq 0 ]
+    tail_line="$(printf '%s\n' "${output}" | tail -n 1)"
+    IFS=':' read -r user group uid gid home <<<"${tail_line}"
+    assert_output_eq "conflictuser" "${user}" "${image}: conflicting user name should be recreated"
+    assert_output_eq "conflictuser" "${group}" "${image}: conflicting group name should be recreated"
+    assert_output_eq "5151" "${uid}" "${image}: recreated uid mismatch"
+    assert_output_eq "5151" "${gid}" "${image}: recreated gid mismatch"
+    assert_output_eq "/home/conflictuser" "${home}" "${image}: recreated home mismatch"
+  done
+}
+
 @test "reowns an existing home directory" {
   local image
   local tail_line
@@ -105,5 +163,23 @@ load helpers/common.sh
     assert_output_eq "/home/demo" "${home}" "${image}: home path mismatch"
     assert_output_eq "2234" "${home_uid}" "${image}: home owner uid mismatch"
     assert_output_eq "3234" "${home_gid}" "${image}: home owner gid mismatch"
+  done
+}
+
+@test "no-ops when invoked as a non-root container user" {
+  local image
+  local tail_line
+
+  for image in "${TEST_IMAGE_TAGS[@]}"; do
+    run docker run --rm \
+      --user 12345:23456 \
+      -e CHU_UID=5555 \
+      -e CHU_GID=6666 \
+      -e CHU_USER=ignored \
+      "${image}" \
+      sh -lc 'printf "%s:%s\n" "$(id -u)" "$(id -g)"'
+    [ "$status" -eq 0 ]
+    tail_line="$(printf '%s\n' "${output}" | tail -n 1)"
+    assert_output_eq "12345:23456" "${tail_line}" "${image}: non-root invocation should bypass provisioning"
   done
 }
