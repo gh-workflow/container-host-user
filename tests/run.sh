@@ -6,4 +6,4 @@ set -eu
 
 repo_root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 
-exec bats "${repo_root}/tests/bats"
+exec bats --recursive "${repo_root}/tests/bats"
