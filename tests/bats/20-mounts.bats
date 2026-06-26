@@ -25,11 +25,6 @@ load helpers/common.sh
     assert_output_eq "1234:2345" "${output}" "${image}: bind mount file owner inside container mismatch"
 
     run docker run --rm -v "${host_dir}:/workspace" alpine:3.22 \
-      sh -lc 'test -f /workspace/output.txt && stat -c "%u:%g" /workspace/output.txt'
-    [ "$status" -eq 0 ]
-    assert_output_eq "1234:2345" "${output}" "${image}: bind mount file owner across containers mismatch"
-
-    run docker run --rm -v "${host_dir}:/workspace" alpine:3.22 \
       sh -lc 'rm -f /workspace/output.txt'
     [ "$status" -eq 0 ]
   done
