@@ -50,25 +50,25 @@ load helpers/common.sh
       -lc "
         set -eu
         if command -v groupadd >/dev/null 2>&1; then
-          getent group 1000 >/dev/null 2>&1 || groupadd -g 1000 ubuntu
+          getent group 1000 >/dev/null 2>&1 || groupadd -g 1000 seededuser
         else
-          getent group 1000 >/dev/null 2>&1 || addgroup -g 1000 ubuntu >/dev/null
+          getent group 1000 >/dev/null 2>&1 || addgroup -g 1000 seededuser >/dev/null
         fi
         if command -v useradd >/dev/null 2>&1; then
-          getent passwd 1000 >/dev/null 2>&1 || useradd -m -u 1000 -g 1000 -d /home/ubuntu -s /bin/sh ubuntu
+          getent passwd 1000 >/dev/null 2>&1 || useradd -m -u 1000 -g 1000 -d /home/seededuser -s /bin/sh seededuser
         else
-          getent passwd 1000 >/dev/null 2>&1 || adduser -D -H -u 1000 -G ubuntu -h /home/ubuntu -s /bin/sh ubuntu >/dev/null
+          getent passwd 1000 >/dev/null 2>&1 || adduser -D -H -u 1000 -G seededuser -h /home/seededuser -s /bin/sh seededuser >/dev/null
         fi
         /usr/local/bin/container-host-user sh -lc 'printf \"%s:%s:%s:%s:%s\n\" \"\$(id -un)\" \"\$(id -gn)\" \"\$(id -u)\" \"\$(id -g)\" \"\$HOME\"'
       "
     [ "$status" -eq 0 ]
     tail_line="$(printf '%s\n' "${output}" | tail -n 1)"
     IFS=':' read -r user group uid gid home <<<"${tail_line}"
-    assert_output_eq "ubuntu" "${user}" "${image}: existing uid should be reused"
-    assert_output_eq "ubuntu" "${group}" "${image}: existing primary group should be reused"
+    assert_output_eq "seededuser" "${user}" "${image}: existing uid should be reused"
+    assert_output_eq "seededuser" "${group}" "${image}: existing primary group should be reused"
     assert_output_eq "1000" "${uid}" "${image}: reused uid mismatch"
     assert_output_eq "1000" "${gid}" "${image}: reused gid mismatch"
-    assert_output_eq "/home/ubuntu" "${home}" "${image}: reused home mismatch"
+    assert_output_eq "/home/seededuser" "${home}" "${image}: reused home mismatch"
   done
 }
 

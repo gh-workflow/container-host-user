@@ -9,6 +9,7 @@ readonly repo_root
 readonly -a TEST_IMAGE_TAGS=(
   "container-host-user-test:alpine"
   "container-host-user-test:debian"
+  "container-host-user-test:fedora"
   "container-host-user-test:ubuntu"
 )
 
