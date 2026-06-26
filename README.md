@@ -34,8 +34,8 @@ available tooling at runtime.
 
 - `bin/container-host-user`: reusable runtime-user provisioning script
 - `examples/megalinter-entrypoint-hook.sh`: entrypoint hook pattern
-- `tests/smoke.sh`: basic smoke tests
-- `tests/integration.sh`: Docker-based cross-distro integration tests
+- `tests/run.sh`: wrapper to run the full test suite
+- `tests/*.bats`: Docker-based cross-distro integration tests
 
 ## Usage
 
@@ -124,10 +124,9 @@ for a concrete hook example.
 Run:
 
 ```sh
-sh tests/smoke.sh
-./tests/integration.sh
+sh tests/run.sh
 ```
 
-The smoke tests validate syntax and basic no-op behavior. The integration tests
-build dedicated Alpine, Debian, and Ubuntu images and validate runtime-user
-behavior against real container entrypoints.
+The `bats` suite includes shell syntax checks, a direct no-op execution check,
+and Docker-based Alpine, Debian, and Ubuntu integration coverage against real
+container entrypoints.
