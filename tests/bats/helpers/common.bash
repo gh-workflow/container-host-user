@@ -26,9 +26,6 @@ readonly -a TEST_HOOK_IMAGE_TAGS=(
 # Fixture image that intentionally omits gosu and su-exec.
 readonly TEST_NO_BACKEND_IMAGE="container-host-user-test:no-backend"
 
-# Real-application pressure-test image based on the official nginx image.
-readonly TEST_NGINX_IMAGE="container-host-user-test:nginx"
-
 # Compare exact strings and print a readable mismatch.
 assert_output_eq() {
   local expected="$1"

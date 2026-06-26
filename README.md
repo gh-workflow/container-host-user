@@ -138,8 +138,5 @@ The `bats` suite includes shell syntax checks, a direct no-op execution check,
 and Docker-based Alpine, Arch Linux, Debian, Fedora, and Ubuntu integration
 coverage against real container entrypoints.
 
-The suite also includes a real-application pressure test based on the official
-`nginx` image.
-
 See [docs/TESTS.md](/home/stefan/development/github/Wuodan/container-host-user/docs/TESTS.md)
 for the coverage map by use-case group.

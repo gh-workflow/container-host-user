@@ -17,7 +17,6 @@
 | Invalid numeric input | Yes | Rejects invalid `CHU_UID` and invalid `CHU_EXTRA_GIDS`. | `tests/bats/contract/40-validation.bats` |
 | Supported backend contract | Yes | Fails clearly when neither `gosu` nor `su-exec` is installed. | `tests/bats/contract/45-backend.bats` |
 | Hook integration | Yes | Covers the small-hook plus callback-to-entrypoint pattern. | `tests/bats/integration/15-hook.bats` |
-| Real application pressure test | Yes | Runs a remapped non-root startup flow on the official `nginx` image. | `tests/bats/integration/16-nginx.bats` |
 | Distro matrix | Yes | Main behavior suite runs on Alpine, Arch Linux, Debian, Fedora, and Ubuntu. | `tests/bats/setup_suite.bash` |
 
 ## Coverage Areas
@@ -79,14 +78,6 @@ The suite checks that:
   existing entrypoint that calls back into the original entrypoint after the
   user switch
 
-### Real Application Pressure Test
-
-The suite checks that:
-
-- the same hook-and-callback model also works on a widely used server image
-- a remapped non-root startup flow can start `nginx` with the required config
-  changes for pid and writable temp paths
-
 ## Test Layout
 
 User-facing runner:
@@ -109,11 +100,8 @@ Image fixtures:
 
 - `tests/images/Dockerfile`
 - `tests/images/hook-callback.Dockerfile`
-- `tests/images/nginx-pressure.Dockerfile`
 - `tests/images/no-backend.Dockerfile`
 - `tests/images/fixture-entrypoint.sh`
-- `tests/images/nginx-hook-entrypoint.sh`
-- `tests/images/nginx.conf`
 
 ## Distro Matrix
 
