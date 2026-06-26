@@ -8,6 +8,7 @@ set -euo pipefail
 repo_root=$(CDPATH= cd -- "$(dirname "${BATS_TEST_FILENAME}")/../.." && pwd)
 readonly repo_root
 readonly dockerfile="${repo_root}/tests/images/Dockerfile"
+readonly hook_dockerfile="${repo_root}/tests/images/hook-callback.Dockerfile"
 readonly no_backend_dockerfile="${repo_root}/tests/images/no-backend.Dockerfile"
 readonly project_tag="container-host-user-test"
 
@@ -29,6 +30,13 @@ build_test_images() {
       --build-arg "BASE_IMAGE=${base_image}" \
       -t "${tag}" \
       -f "${dockerfile}" \
+      "${repo_root}" >/dev/null
+
+    echo "building ${tag}-hook from ${base_image}" >&3
+    docker build \
+      --build-arg "BASE_IMAGE=${base_image}" \
+      -t "${tag}-hook" \
+      -f "${hook_dockerfile}" \
       "${repo_root}" >/dev/null
   done
 

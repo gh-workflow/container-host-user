@@ -13,6 +13,14 @@ readonly -a TEST_IMAGE_TAGS=(
   "container-host-user-test:ubuntu"
 )
 
+# Companion hook/callback fixture images for the same distro matrix.
+readonly -a TEST_HOOK_IMAGE_TAGS=(
+  "container-host-user-test:alpine-hook"
+  "container-host-user-test:debian-hook"
+  "container-host-user-test:fedora-hook"
+  "container-host-user-test:ubuntu-hook"
+)
+
 # Fixture image that intentionally omits gosu and su-exec.
 readonly TEST_NO_BACKEND_IMAGE="container-host-user-test:no-backend"
 
