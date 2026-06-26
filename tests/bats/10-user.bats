@@ -37,8 +37,9 @@ load helpers/common.bash
 
 @test "reuses existing uid instead of replacing it" {
   local image
-  local tail_line
-  local user group uid gid home
+  local -a lines
+  local expected_user expected_group expected_uid expected_gid expected_home
+  local actual_user actual_group actual_uid actual_gid actual_home
 
   for image in "${TEST_IMAGE_TAGS[@]}"; do
     run docker run --rm --entrypoint sh \
@@ -59,16 +60,22 @@ load helpers/common.bash
         else
           getent passwd 1000 >/dev/null 2>&1 || adduser -D -H -u 1000 -G seededuser -h /home/seededuser -s /bin/sh seededuser >/dev/null
         fi
+        before_entry=\"\$(getent passwd 1000)\"
+        before_user=\"\${before_entry%%:*}\"
+        before_home=\"\$(printf '%s' \"\${before_entry}\" | cut -d: -f6)\"
+        before_group=\"\$(id -gn \"\${before_user}\")\"
+        printf \"%s:%s:%s:%s:%s\n\" \"\${before_user}\" \"\${before_group}\" \"1000\" \"1000\" \"\${before_home}\"
         /usr/local/bin/container-host-user sh -lc 'printf \"%s:%s:%s:%s:%s\n\" \"\$(id -un)\" \"\$(id -gn)\" \"\$(id -u)\" \"\$(id -g)\" \"\$HOME\"'
       "
     [ "$status" -eq 0 ]
-    tail_line="$(printf '%s\n' "${output}" | tail -n 1)"
-    IFS=':' read -r user group uid gid home <<<"${tail_line}"
-    assert_output_eq "seededuser" "${user}" "${image}: existing uid should be reused"
-    assert_output_eq "seededuser" "${group}" "${image}: existing primary group should be reused"
-    assert_output_eq "1000" "${uid}" "${image}: reused uid mismatch"
-    assert_output_eq "1000" "${gid}" "${image}: reused gid mismatch"
-    assert_output_eq "/home/seededuser" "${home}" "${image}: reused home mismatch"
+    mapfile -t lines <<<"${output}"
+    IFS=':' read -r expected_user expected_group expected_uid expected_gid expected_home <<<"${lines[0]}"
+    IFS=':' read -r actual_user actual_group actual_uid actual_gid actual_home <<<"${lines[1]}"
+    assert_output_eq "${expected_user}" "${actual_user}" "${image}: existing uid should be reused"
+    assert_output_eq "${expected_group}" "${actual_group}" "${image}: existing primary group should be reused"
+    assert_output_eq "${expected_uid}" "${actual_uid}" "${image}: reused uid mismatch"
+    assert_output_eq "${expected_gid}" "${actual_gid}" "${image}: reused gid mismatch"
+    assert_output_eq "${expected_home}" "${actual_home}" "${image}: reused home mismatch"
   done
 }
 
