@@ -9,10 +9,10 @@ HTTPD_RUNTIME_GID="${HTTPD_GID:-}"
 HTTPD_RUNTIME_USER="${HTTPD_USER:-httpdhost}"
 HTTPD_RUNTIME_HOME="${HTTPD_HOME:-/home/${HTTPD_RUNTIME_USER}}"
 
-if [ "$(id -u)" -eq 0 ] \
-  && [ -n "${HTTPD_RUNTIME_UID}" ] \
-  && [ -n "${HTTPD_RUNTIME_GID}" ] \
-  && [ "${CHU_USER_SWITCHED:-0}" != "1" ]; then
+if [ "$(id -u)" -eq 0 ] &&
+  [ -n "${HTTPD_RUNTIME_UID}" ] &&
+  [ -n "${HTTPD_RUNTIME_GID}" ] &&
+  [ "${CHU_USER_SWITCHED:-0}" != "1" ]; then
   export CHU_UID="${HTTPD_RUNTIME_UID}"
   export CHU_GID="${HTTPD_RUNTIME_GID}"
   export CHU_USER="${HTTPD_RUNTIME_USER}"

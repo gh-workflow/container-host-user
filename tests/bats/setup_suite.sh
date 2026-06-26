@@ -5,7 +5,7 @@ set -euo pipefail
 # bats loads this file automatically before executing tests in this directory.
 
 # Repository-local inputs for building the test image matrix.
-repo_root=$(CDPATH= cd -- "$(dirname "${BATS_TEST_FILENAME}")/../.." && pwd)
+repo_root=$(CDPATH='' cd -- "$(dirname "${BATS_TEST_FILENAME}")/../.." && pwd)
 readonly repo_root
 readonly dockerfile="${repo_root}/tests/images/Dockerfile"
 readonly hook_dockerfile="${repo_root}/tests/images/hook-callback.Dockerfile"

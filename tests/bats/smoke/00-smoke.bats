@@ -3,7 +3,7 @@
 # Fast smoke checks that do not need Docker image setup.
 
 setup() {
-  repo_root=$(CDPATH= cd -- "$(dirname "${BATS_TEST_FILENAME}")/../../.." && pwd)
+  repo_root=$(CDPATH='' cd -- "$(dirname "${BATS_TEST_FILENAME}")/../../.." && pwd)
 }
 
 @test "container-host-user script parses as sh" {

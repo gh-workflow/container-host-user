@@ -110,10 +110,10 @@ Pattern for an existing entrypoint:
 #!/bin/sh
 set -eu
 
-if [ "$(id -u)" -eq 0 ] \
-  && [ -n "${CHU_UID:-}" ] \
-  && [ -n "${CHU_GID:-}" ] \
-  && [ "${CHU_USER_SWITCHED:-0}" != "1" ]; then
+if [ "$(id -u)" -eq 0 ] &&
+  [ -n "${CHU_UID:-}" ] &&
+  [ -n "${CHU_GID:-}" ] &&
+  [ "${CHU_USER_SWITCHED:-0}" != "1" ]; then
   exec /usr/local/bin/container-host-user /entrypoint.sh "$@"
 fi
 

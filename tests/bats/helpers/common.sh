@@ -2,10 +2,9 @@
 
 # Shared helpers for bats-based integration tests.
 
-repo_root=$(CDPATH= cd -- "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
-readonly repo_root
-
 # Image tags produced by setup_suite.sh.
+# shellcheck disable=SC2034
+# This constant is consumed by bats test files that `load` this helper.
 readonly -a TEST_IMAGE_TAGS=(
   "container-host-user-test:alpine"
   "container-host-user-test:arch"
@@ -15,6 +14,8 @@ readonly -a TEST_IMAGE_TAGS=(
 )
 
 # Companion hook/callback fixture images for the same distro matrix.
+# shellcheck disable=SC2034
+# This constant is consumed by bats test files that `load` this helper.
 readonly -a TEST_HOOK_IMAGE_TAGS=(
   "container-host-user-test:alpine-hook"
   "container-host-user-test:arch-hook"
@@ -24,9 +25,13 @@ readonly -a TEST_HOOK_IMAGE_TAGS=(
 )
 
 # Fixture image that intentionally omits gosu and su-exec.
+# shellcheck disable=SC2034
+# This constant is consumed by bats test files that `load` this helper.
 readonly TEST_NO_BACKEND_IMAGE="container-host-user-test:no-backend"
 
 # Real-application pressure-test image based on the official httpd image.
+# shellcheck disable=SC2034
+# This constant is consumed by bats test files that `load` this helper.
 readonly TEST_HTTPD_IMAGE="container-host-user-test:httpd"
 
 # Compare exact strings and print a readable mismatch.
