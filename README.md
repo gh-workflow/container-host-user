@@ -19,50 +19,62 @@ This project provides a small shell script that:
 
 It is designed to be dropped into existing images and existing entrypoints.
 
-## Supported targets
+## What You Add To An Image
 
-Primary targets:
+You add one script to your image and call it from an entrypoint that still
+starts as `root`.
 
-- Alpine
-- Debian
-- Fedora
-- Ubuntu
+This project is not tied to Debian or Ubuntu. It works across distributions as
+long as the image provides:
 
-Additional matrix coverage:
+- a POSIX `sh`
+- the usual user/group management tools for that distro
+- either `gosu` or `su-exec` to drop privileges
 
-- Arch Linux
-
-The script avoids distro-specific assumptions where possible and chooses the
-available tooling at runtime.
-
-## Files
-
-- `bin/container-host-user`: reusable runtime-user provisioning script
-- `examples/example-entrypoint-hook.sh`: entrypoint hook pattern
-- `tests/run.sh`: wrapper to run the full test suite
-- `docs/TESTS.md`: skimmable test coverage map
-- `tests/bats/`: Docker-based cross-distro tests grouped by concern
-
-## Usage
-
-Copy the script into your image and call it from an entrypoint that still starts
-as `root`. Your image must also provide either `gosu` or `su-exec`.
+The examples below use `apt-get` only because it is familiar. On Alpine you
+would typically install `su-exec`; on Debian/Ubuntu you would typically install
+`gosu`.
 
 ```dockerfile
 COPY bin/container-host-user /usr/local/bin/container-host-user
 RUN apt-get update && apt-get install -y --no-install-recommends gosu
 ```
 
-Minimal wrapper:
+OCI image form:
 
-```sh
-#!/bin/sh
-set -eu
+```dockerfile
+FROM ghcr.io/wuodan/container-host-user:latest AS container_host_user
+FROM your-base-image
 
-exec /usr/local/bin/container-host-user /entrypoint.sh "$@"
+COPY --from=container_host_user \
+  /usr/local/bin/container-host-user \
+  /usr/local/bin/container-host-user
+RUN apt-get update && apt-get install -y --no-install-recommends gosu
 ```
 
-Typical runtime configuration:
+## Integration Patterns
+
+You usually integrate `container-host-user` in one of two ways. The difference
+is simply where you add the handoff to `container-host-user`.
+
+### 1. Set `container-host-user` as the image entrypoint
+
+This is the simplest form. Set the image entrypoint directly to
+`container-host-user` and pass the real application entrypoint as its first
+argument. `container-host-user` performs the user/group setup and then `exec`s
+the real entrypoint.
+
+```dockerfile
+ENTRYPOINT ["/usr/local/bin/container-host-user", "/entrypoint.sh"]
+```
+
+In this pattern:
+
+- `/usr/local/bin/container-host-user` handles the user/group setup
+- `/entrypoint.sh` is your real application entrypoint
+- container arguments are forwarded unchanged to `/entrypoint.sh`
+
+At runtime, pass the host uid/gid:
 
 ```sh
 docker run --rm \
@@ -74,35 +86,12 @@ docker run --rm \
   your-image
 ```
 
-## Environment variables
+### 2. Add the handoff inside the existing entrypoint
 
-- `CHU_UID`: target runtime UID. If unset, the script becomes a no-op.
-- `CHU_GID`: target runtime GID. If unset, the script becomes a no-op.
-- `CHU_USER`: preferred runtime username. Default: `hostuser`
-- `CHU_HOME`: preferred runtime home. Default: `/home/$CHU_USER`, or `/root`
-  for UID `0`
-- `CHU_COPY_SKEL`: copy missing files from `/etc/skel` into the home directory.
-  Default: `1`
-- `CHU_EXTRA_GIDS`: comma- or space-separated supplemental GIDs to create or
-  reuse and add to the runtime user. Useful for mounted resources such as
-  Docker sockets.
-
-## Behavior
-
-- If the process is not running as `root`, it directly `exec`s the target
-  command.
-- If `CHU_UID` or `CHU_GID` is missing, it directly `exec`s the target command.
-- If a user with the requested UID already exists, it is reused.
-- If a group with the requested GID already exists, it is reused.
-- If the preferred user or group name already exists with conflicting IDs, the
-  script removes and recreates that account.
-- The script creates the target home directory and attempts to own it.
-- The script can add the runtime user to supplemental groups via
-  `CHU_EXTRA_GIDS`.
-- The script requires one supported privilege-drop backend:
-  `gosu` or `su-exec`.
-
-## Example integration
+Use this pattern when you want the image's existing entrypoint script to
+contain the handoff logic directly. The entrypoint checks whether a user switch
+is needed. If it is, it calls `container-host-user` once and then continues as
+the target user.
 
 Pattern for an existing entrypoint:
 
@@ -123,19 +112,27 @@ exec /entrypoint.sh "$@"
 See [examples/example-entrypoint-hook.sh](examples/example-entrypoint-hook.sh)
 for a concrete hook example.
 
-## Tests
+## Where It Fits
 
-Run:
+This is meant for the common case where bind mounts should receive host-owned
+files instead of `root`-owned files:
 
-```sh
-./tests/run.sh
-```
+- the container starts as `root`
+- the actual application can run as a non-root user
 
-The `bats` suite includes shell syntax checks, a direct no-op execution check,
-and Docker-based Alpine, Arch Linux, Debian, Fedora, and Ubuntu integration
-coverage against real container entrypoints.
+It avoids distro-specific assumptions where possible and chooses available user
+management tools at runtime. The current test matrix covers Alpine, Arch Linux,
+Debian, Fedora, and Ubuntu.
 
-The suite also includes a real-application pressure test based on the official
-`httpd` image.
+## Environment variables
 
-See [docs/TESTS.md](docs/TESTS.md) for the coverage map by use-case group.
+- `CHU_UID`: target runtime UID. If unset, the script becomes a no-op.
+- `CHU_GID`: target runtime GID. If unset, the script becomes a no-op.
+- `CHU_USER`: preferred runtime username. Default: `hostuser`
+- `CHU_HOME`: preferred runtime home. Default: `/home/$CHU_USER`, or `/root`
+  for UID `0`
+- `CHU_COPY_SKEL`: copy missing files from `/etc/skel` into the home directory.
+  Default: `1`
+- `CHU_EXTRA_GIDS`: comma- or space-separated supplemental GIDs to create or
+  reuse and add to the runtime user. Useful for mounted resources such as
+  Docker sockets.
