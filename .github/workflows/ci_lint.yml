@@ -1,20 +1,8 @@
 name: "CI: lint"
 
-"on":
+on:
   workflow_call:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-
-concurrency:
-  group: >-
-    ${{ github.workflow }}-${{ github.ref }}${{
-      github.event_name == 'workflow_dispatch' && '-manual-' || ''
-    }}${{
-      github.event_name == 'workflow_dispatch' && github.run_id || ''
-    }}
-  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -27,7 +15,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          token: ${{ secrets.PAT || github.token }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -51,3 +38,18 @@ jobs:
           MEGALINTER_USER: ${{ env.MEGALINTER_USER }}
           # shfmt shall prefer 2 spaces to indent not tabs
           BASH_SHFMT_ARGUMENTS: -indent 2 -case-indent
+
+  ensure-immutable-actions:
+    name: Run ensure-immutable-actions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Ensure workflow actions use immutable refs
+        uses: joshjohanning/ensure-immutable-actions@9f5dad6bb6148bd29ff0d874de6a8cc70af08fa9 # v2.6.2
+        with:
+          include-first-party: "true"
+          write-job-summary: "on-failure-only"
