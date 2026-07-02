@@ -1,0 +1,23 @@
+name: "CI: validation"
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_call:
+  workflow_dispatch:
+
+concurrency:
+  group: validation-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    uses: ./.github/workflows/ci_lint.yml
+
+  test:
+    uses: ./.github/workflows/ci_test.yml
