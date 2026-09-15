@@ -28,7 +28,7 @@ jobs:
 
       - name: MegaLinter
         id: ml
-        uses: oxsecurity/megalinter@15e5b45552097e318c93de385779ce3b1084052c # v10.0.0
+        uses: oxsecurity/megalinter@9949bad031045f366be2467e00e8371a7328a2e2 # v10.1.0
         env:
           VALIDATE_ALL_CODEBASE: true
           GITHUB_TOKEN: ${{ github.token }}
@@ -49,7 +49,7 @@ jobs:
           persist-credentials: false
 
       - name: Ensure workflow actions use immutable refs
-        uses: joshjohanning/ensure-immutable-actions@9f5dad6bb6148bd29ff0d874de6a8cc70af08fa9 # v2.6.2
+        uses: joshjohanning/ensure-immutable-actions@bc90ba67ffdea94121d930e649ba3d6219dcf275 # v2.7.0
         with:
           include-first-party: "true"
           write-job-summary: "on-failure-only"
