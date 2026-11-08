@@ -2,3 +2,6 @@ ACTION_ZIZMOR_UNSECURED_ENV_VARIABLES:
   - GITHUB_TOKEN
 REPOSITORY_TRIVY_ARGUMENTS: >-
   --ignorefile .trivyignore.yaml
+
+# jscpd
+COPYPASTE_JSCPD_ARGUMENTS: "--threshold 10"
